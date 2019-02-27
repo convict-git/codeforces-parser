@@ -1,0 +1,55 @@
+#! /bin/bash
+
+#this script is to test solutions on random test cases and against a tester
+#requirements-
+#Generator with manual seed that can be provided from shell
+#Tester to test the same generated test case using brute force solution
+#diff command to see whether both solution gives same answer
+#compile all cpp files
+#generate a input file test case testCase
+#run that test case against ur solution save it in mySol
+#run that test case against brute force solution save in it bruteSol
+#run a diff command
+#clear all created files except the file where it went wrong
+
+rm -rf gen.out
+rm -rf tester.out
+if g++ -std=gnu++14 -Wall -g -Wextra -Wshadow -Wfloat-equal -Wconversion -Wshift-overflow=2 -Wduplicated-cond -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2 -fsanitize=signed-integer-overflow -fsanitize=bounds -O2 gen.cpp -o gen.out; then
+	echo -e "\e[1m\e[32mGenerator compiled successfully...\e[0m"
+else
+	exit
+fi
+if g++ -std=gnu++14 -Wall -g -Wextra -Wshadow -Wfloat-equal -Wconversion -Wshift-overflow=2 -Wduplicated-cond -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2 -fsanitize=signed-integer-overflow -fsanitize=bounds -O2 tester.cpp -o tester.out; then
+	echo -e "\e[1m\e[32mTester compiled successfully...\e[0m"
+else
+	exit
+fi
+sleep 1
+
+INPUT=in
+OUTPUT=out
+EXPECTED=exc
+
+for ((i = 1; ; ++i)); do
+	./gen.out $i > $INPUT
+	if timeout 1 ./a.out < $INPUT > $OUTPUT; then
+		./tester.out < $INPUT > $EXPECTED
+		if diff --brief --ignore-trailing-space $OUTPUT $EXPECTED >> errlg; then  #do a diff on output and my_output
+			echo -e "\e[1m\e[32m\tSample test $i: Accepted\e[0m"
+			rm -rf errlg
+		else
+			echo -e "\e[1m\e[31m\tSample test $i: Wrong Answer\e[0m"
+			cat $INPUT
+			cat $EXPECTED
+			cat $OUTPUT
+			exit
+		fi
+	else
+		echo -e "\e[91m\e[1m\tSample test $i: Time Limit Exceeded! \e[0mAllowed : 1s\e[0m"
+		cat $INPUT
+		exit
+	fi
+done
+
+rm -rf gen.out
+rm -rf tester.out
